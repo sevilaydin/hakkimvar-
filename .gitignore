@@ -1,0 +1,16 @@
+﻿## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.userprefs
+
+## Secrets — never commit real API keys
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+
+## OS
+.DS_Store
+Thumbs.db
