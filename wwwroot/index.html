@@ -414,7 +414,9 @@
 </div>
 
 <script>
-  const API_URL = 'https://maritime-quadrant-grumpily.ngrok-free.app/api/chat';
+  const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000/api/chat'
+    : `${window.location.origin}/api/chat`;
   let isWaiting = false;
   let currentCat = 'İşten Çıkarma';
   const catHistory = {}; // kategori adı → messages div innerHTML
@@ -671,6 +673,7 @@
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify({ message: text }),
       });
