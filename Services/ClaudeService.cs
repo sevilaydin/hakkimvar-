@@ -13,7 +13,7 @@ public class ClaudeService
     private readonly string _apiKey;
 
     private const string GeminiEndpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     private const string SystemInstructions =
         "Sen bir Türk İş Hukuku asistanısın. Adın \"HakkımVar Asistanı\"dır.\n\n" +
@@ -75,11 +75,8 @@ public class ClaudeService
 
             if (!response.IsSuccessStatusCode)
             {
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                    return ("Şu an yoğunluk var, lütfen birkaç saniye sonra tekrar deneyin.", new List<SourceItem>(), true);
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                    return ("API anahtarı geçersiz.", new List<SourceItem>(), true);
-                return ("Sunucu hatası oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+                var errBody = await response.Content.ReadAsStringAsync();
+                return ($"HTTP {(int)response.StatusCode}: {errBody.Split('\n')[0][..Math.Min(200, errBody.Length)]}", new List<SourceItem>(), true);
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
