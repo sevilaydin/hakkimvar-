@@ -79,8 +79,8 @@ public class ClaudeService
             if (!response.IsSuccessStatusCode)
             {
                 var errBody = await response.Content.ReadAsStringAsync();
-                var firstLine = errBody.Length > 0 ? errBody.Split('\n')[0] : "boş yanıt";
-                var preview = firstLine.Length > 200 ? firstLine[..200] : firstLine;
+                var preview = errBody.Replace("\n", " ").Replace("\r", "");
+                preview = preview.Length > 400 ? preview[..400] : preview;
                 return ($"HTTP {(int)response.StatusCode}: {preview}", new List<SourceItem>(), true);
             }
 
