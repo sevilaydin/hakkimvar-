@@ -13,7 +13,7 @@ public class ClaudeService
     private readonly string _apiKey;
 
     private const string GeminiEndpoint =
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     private const string SystemInstructions =
         "Sen bir Türk İş Hukuku asistanısın. Adın \"HakkımVar Asistanı\"dır.\n\n" +
@@ -43,6 +43,9 @@ public class ClaudeService
 
     public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
     {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+            return ("HATA: Gemini API key Render'da tanımlı değil. Gemini__ApiKey env var ekleyin.", new List<SourceItem>(), true);
+
         try
         {
             var systemText = BuildSystemText();
