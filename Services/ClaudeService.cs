@@ -63,15 +63,21 @@ public class ClaudeService
                 new MessageParam { Role = Role.User, Content = userMessage }
             };
 
+            var tools = new List<ToolUnion>
+            {
+                new WebSearchTool20250305 { Name = JsonSerializer.SerializeToElement("web_search") }
+            };
+
             string rawReply = string.Empty;
 
             for (int i = 0; i < 5; i++)
             {
                 var response = await _client.Messages.Create(new MessageCreateParams
                 {
-                    Model = "claude-sonnet-4-5-20251001",
+                    Model = "claude-opus-4-7",
                     MaxTokens = 4096,
                     System = systemBlocks,
+                    Tools = tools,
                     Messages = messages
                 }, cts.Token);
 
@@ -141,9 +147,13 @@ public class ClaudeService
         {
             return ("Bağlantı kurulamadı, internet bağlantınızı kontrol edin.", new List<SourceItem>(), true);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex.Message.Contains("credit balance"))
         {
-            return ($"HATA_TIPI:{ex.GetType().Name} MESAJ:{ex.Message}", new List<SourceItem>(), true);
+            return ("Hizmet şu an kullanılamıyor, lütfen daha sonra tekrar deneyin.", new List<SourceItem>(), true);
+        }
+        catch
+        {
+            return ("Sunucu hatası oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
         }
     }
 
