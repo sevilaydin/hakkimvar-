@@ -228,8 +228,8 @@
 
     /* error bubble */
     .error-bubble {
-      background: #fff0f0; color: #c0392b;
-      border: 1px solid #f5c2c2;
+      background: #fffbea; color: #92600a;
+      border: 1px solid #f9d97b;
       padding: 10px 16px; border-radius: var(--radius);
       font-size: .85rem; display: flex; align-items: center; gap: 8px;
     }
@@ -688,7 +688,7 @@
       const data = await res.json();
 
       if (data.success === false) {
-        appendError('Asistan şu an yanıt veremiyor, lütfen tekrar deneyin.');
+        appendError(data.reply || 'Asistan şu an yanıt veremiyor, lütfen tekrar deneyin.');
         return;
       }
 

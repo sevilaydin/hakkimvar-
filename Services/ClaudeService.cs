@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Anthropic;
+using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
 using Hakkimvar.Models;
 
@@ -49,82 +50,107 @@ public class ClaudeService
         _kanunService = kanunService;
     }
 
-    public async Task<(string Reply, List<SourceItem> Sources)> GetResponseAsync(string userMessage)
+    public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
     {
-        var systemBlocks = BuildSystemBlocks();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-        var messages = new List<MessageParam>
+        try
         {
-            new MessageParam { Role = Role.User, Content = userMessage }
-        };
+            var systemBlocks = BuildSystemBlocks();
 
-        var tools = new List<ToolUnion>
-        {
-            new WebSearchTool20250305 { Name = JsonSerializer.SerializeToElement("web_search") }
-        };
-
-        string rawReply = string.Empty;
-
-        for (int i = 0; i < 5; i++)
-        {
-            var response = await _client.Messages.Create(new MessageCreateParams
+            var messages = new List<MessageParam>
             {
-                Model = "claude-opus-4-7",
-                MaxTokens = 4096,
-                System = systemBlocks,
-                Tools = tools,
-                Messages = messages
-            });
+                new MessageParam { Role = Role.User, Content = userMessage }
+            };
 
-            rawReply = string.Join("", response.Content
-                .Select(b => b.Value)
-                .OfType<TextBlock>()
-                .Select(t => t.Text));
-
-            if (response.StopReason != StopReason.ToolUse)
-                break;
-
-            var rawBlocks = response.Content
-                .Select(b => b.Value)
-                .Select(BuildRawBlock)
-                .Where(e => e.HasValue)
-                .Select(e => e!.Value)
-                .ToArray();
-
-            if (rawBlocks.Length == 0) break;
-
-            messages.Add(MessageParam.FromRawUnchecked(new Dictionary<string, JsonElement>
+            var tools = new List<ToolUnion>
             {
-                ["role"] = JsonSerializer.SerializeToElement("assistant"),
-                ["content"] = JsonSerializer.SerializeToElement(rawBlocks)
-            }));
+                new WebSearchTool20250305 { Name = JsonSerializer.SerializeToElement("web_search") }
+            };
 
-            var clientToolUseBlocks = response.Content
-                .Select(b => b.Value)
-                .OfType<ToolUseBlock>()
-                .ToList();
+            string rawReply = string.Empty;
 
-            if (clientToolUseBlocks.Any())
+            for (int i = 0; i < 5; i++)
             {
-                var toolResults = clientToolUseBlocks
-                    .Select(t => JsonSerializer.SerializeToElement(new
-                    {
-                        type = "tool_result",
-                        tool_use_id = t.ID,
-                        content = ""
-                    }))
+                var response = await _client.Messages.Create(new MessageCreateParams
+                {
+                    Model = "claude-opus-4-7",
+                    MaxTokens = 4096,
+                    System = systemBlocks,
+                    Tools = tools,
+                    Messages = messages
+                }, cts.Token);
+
+                rawReply = string.Join("", response.Content
+                    .Select(b => b.Value)
+                    .OfType<TextBlock>()
+                    .Select(t => t.Text));
+
+                if (response.StopReason != StopReason.ToolUse)
+                    break;
+
+                var rawBlocks = response.Content
+                    .Select(b => b.Value)
+                    .Select(BuildRawBlock)
+                    .Where(e => e.HasValue)
+                    .Select(e => e!.Value)
                     .ToArray();
+
+                if (rawBlocks.Length == 0) break;
 
                 messages.Add(MessageParam.FromRawUnchecked(new Dictionary<string, JsonElement>
                 {
-                    ["role"] = JsonSerializer.SerializeToElement("user"),
-                    ["content"] = JsonSerializer.SerializeToElement(toolResults)
+                    ["role"] = JsonSerializer.SerializeToElement("assistant"),
+                    ["content"] = JsonSerializer.SerializeToElement(rawBlocks)
                 }));
-            }
-        }
 
-        var (cleanReply, sources) = ParseSources(rawReply);
-        return (cleanReply, sources);
+                var clientToolUseBlocks = response.Content
+                    .Select(b => b.Value)
+                    .OfType<ToolUseBlock>()
+                    .ToList();
+
+                if (clientToolUseBlocks.Any())
+                {
+                    var toolResults = clientToolUseBlocks
+                        .Select(t => JsonSerializer.SerializeToElement(new
+                        {
+                            type = "tool_result",
+                            tool_use_id = t.ID,
+                            content = ""
+                        }))
+                        .ToArray();
+
+                    messages.Add(MessageParam.FromRawUnchecked(new Dictionary<string, JsonElement>
+                    {
+                        ["role"] = JsonSerializer.SerializeToElement("user"),
+                        ["content"] = JsonSerializer.SerializeToElement(toolResults)
+                    }));
+                }
+            }
+
+            var (cleanReply, sources) = ParseSources(rawReply);
+            return (cleanReply, sources, false);
+        }
+        catch (OperationCanceledException)
+        {
+            return ("İstek zaman aşımına uğradı, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+        }
+        catch (AnthropicUnauthorizedException)
+        {
+            return ("API anahtarı geçersiz.", new List<SourceItem>(), true);
+        }
+        catch (Exception ex) when (ex.Message.Contains("529") || ex.Message.Contains("overloaded", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("Şu an yoğunluk var, lütfen birkaç saniye sonra tekrar deneyin.", new List<SourceItem>(), true);
+        }
+        catch (HttpRequestException)
+        {
+            return ("Bağlantı kurulamadı, internet bağlantınızı kontrol edin.", new List<SourceItem>(), true);
+        }
+        catch
+        {
+            return ("Sunucu hatası oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+        }
     }
 
     private static (string Reply, List<SourceItem> Sources) ParseSources(string raw)
