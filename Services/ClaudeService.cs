@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -12,14 +13,14 @@ public class ClaudeService
     private readonly KanunService _kanunService;
     private readonly string _apiKey;
 
-    private const string GeminiEndpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+    private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
+    private const string Model = "llama-3.3-70b-versatile";
 
     private const string SystemInstructions =
         "Sen bir Türk İş Hukuku asistanısın. Adın \"HakkımVar Asistanı\"dır.\n\n" +
         "GÖREVIN:\n" +
         "- Kullanıcının sorularını yalnızca sana verilen İş Kanunu metni ve ilgili mevzuata dayanarak yanıtlamak.\n" +
-        "- Kıdem tazminatı tavanı, asgari ücret, SGK primleri gibi yıllık değişen rakamları güncel bilgilerine göre ver.\n" +
+        "- Kıdem tazminatı tavanı, asgari ücret, SGK primleri gibi yıllık değişen rakamları bilgilerine göre ver.\n" +
         "- Her yanıtta mutlaka ilgili kanun madde numaralarını belirtmek.\n" +
         "- Yanıtlarını sade, anlaşılır Türkçe ile yazmak. Hukuk jargonunu minimumda tut.\n" +
         "- Karmaşık bir durumsa adım adım açıkla.\n\n" +
@@ -36,7 +37,7 @@ public class ClaudeService
 
     public ClaudeService(IConfiguration configuration, KanunService kanunService)
     {
-        _apiKey = configuration["Gemini:ApiKey"] ?? "";
+        _apiKey = configuration["Groq:ApiKey"] ?? "";
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
         _kanunService = kanunService;
     }
@@ -44,7 +45,7 @@ public class ClaudeService
     public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
-            return ("HATA: Gemini API key Render'da tanımlı değil. Gemini__ApiKey env var ekleyin.", new List<SourceItem>(), true);
+            return ("HATA: Groq API key tanımlı değil. Groq__ApiKey env var ekleyin.", new List<SourceItem>(), true);
 
         try
         {
@@ -52,46 +53,38 @@ public class ClaudeService
 
             var requestBody = new
             {
-                system_instruction = new
+                model = Model,
+                messages = new[]
                 {
-                    parts = new[] { new { text = systemText } }
+                    new { role = "system", content = systemText },
+                    new { role = "user",   content = userMessage }
                 },
-                contents = new[]
-                {
-                    new
-                    {
-                        role = "user",
-                        parts = new[] { new { text = userMessage } }
-                    }
-                },
-                generationConfig = new
-                {
-                    maxOutputTokens = 4096,
-                    temperature = 0.3
-                }
+                max_tokens = 4096,
+                temperature = 0.3
             };
 
             var json = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Post, GroqEndpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{GeminiEndpoint}?key={_apiKey}", content);
+            var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
                 var errBody = await response.Content.ReadAsStringAsync();
-                var preview = errBody.Replace("\n", " ").Replace("\r", "");
-                preview = preview.Length > 400 ? preview[..400] : preview;
+                var preview = errBody.Replace("\n", " ");
+                preview = preview.Length > 300 ? preview[..300] : preview;
                 return ($"HTTP {(int)response.StatusCode}: {preview}", new List<SourceItem>(), true);
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
-            var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
+            var groqResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
-            var text = geminiResponse
-                .GetProperty("candidates")[0]
+            var text = groqResponse
+                .GetProperty("choices")[0]
+                .GetProperty("message")
                 .GetProperty("content")
-                .GetProperty("parts")[0]
-                .GetProperty("text")
                 .GetString() ?? "";
 
             var (cleanReply, sources) = ParseSources(text);
@@ -105,9 +98,9 @@ public class ClaudeService
         {
             return ("Bağlantı kurulamadı, internet bağlantınızı kontrol edin.", new List<SourceItem>(), true);
         }
-        catch
+        catch (Exception ex)
         {
-            return ("Sunucu hatası oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+            return ($"Hata: {ex.Message[..Math.Min(100, ex.Message.Length)]}", new List<SourceItem>(), true);
         }
     }
 
