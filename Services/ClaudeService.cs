@@ -147,9 +147,9 @@ public class ClaudeService
         {
             return ("Bağlantı kurulamadı, internet bağlantınızı kontrol edin.", new List<SourceItem>(), true);
         }
-        catch
+        catch (Exception ex)
         {
-            return ("Sunucu hatası oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+            return ($"Hata: {ex.GetType().Name} — {ex.Message.Split('\n')[0]}", new List<SourceItem>(), true);
         }
     }
 
