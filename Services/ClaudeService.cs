@@ -63,11 +63,6 @@ public class ClaudeService
                 new MessageParam { Role = Role.User, Content = userMessage }
             };
 
-            var tools = new List<ToolUnion>
-            {
-                new WebSearchTool20250305 { Name = JsonSerializer.SerializeToElement("web_search") }
-            };
-
             string rawReply = string.Empty;
 
             for (int i = 0; i < 5; i++)
@@ -77,7 +72,6 @@ public class ClaudeService
                     Model = "claude-opus-4-7",
                     MaxTokens = 4096,
                     System = systemBlocks,
-                    Tools = tools,
                     Messages = messages
                 }, cts.Token);
 
