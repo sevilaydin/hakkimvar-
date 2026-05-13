@@ -69,7 +69,7 @@ public class ClaudeService
             {
                 var response = await _client.Messages.Create(new MessageCreateParams
                 {
-                    Model = "claude-opus-4-7",
+                    Model = "claude-sonnet-4-5-20251001",
                     MaxTokens = 4096,
                     System = systemBlocks,
                     Messages = messages
