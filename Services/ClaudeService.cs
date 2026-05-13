@@ -143,7 +143,7 @@ public class ClaudeService
         }
         catch (Exception ex)
         {
-            return ($"Hata: {ex.GetType().Name} — {ex.Message.Split('\n')[0]}", new List<SourceItem>(), true);
+            return ($"HATA_TIPI:{ex.GetType().Name} MESAJ:{ex.Message}", new List<SourceItem>(), true);
         }
     }
 
