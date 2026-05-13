@@ -13,7 +13,7 @@ public class ClaudeService
     private readonly string _apiKey;
 
     private const string GeminiEndpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
     private const string SystemInstructions =
         "Sen bir Türk İş Hukuku asistanısın. Adın \"HakkımVar Asistanı\"dır.\n\n" +
