@@ -9,11 +9,13 @@ namespace Hakkimvar.Controllers;
 public class ChatController : ControllerBase
 {
     private readonly ClaudeService _claudeService;
+    private readonly YargitayService _yargitayService;
     private readonly ILogger<ChatController> _logger;
 
-    public ChatController(ClaudeService claudeService, ILogger<ChatController> logger)
+    public ChatController(ClaudeService claudeService, YargitayService yargitayService, ILogger<ChatController> logger)
     {
         _claudeService = claudeService;
+        _yargitayService = yargitayService;
         _logger = logger;
     }
 
@@ -23,7 +25,16 @@ public class ChatController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new ChatResponse { Success = false, Error = "Mesaj boş olamaz." });
 
-        var (reply, sources, isError) = await _claudeService.GetResponseAsync(request.Message);
-        return Ok(new ChatResponse { Reply = reply, Success = !isError, Sources = sources });
+        var claudeTask = _claudeService.GetResponseAsync(request.Message);
+        var yargitayTask = _yargitayService.SearchAsync(request.Message);
+
+        await Task.WhenAll(claudeTask, yargitayTask);
+
+        var (reply, claudeSources, isError) = claudeTask.Result;
+        var yargitaySources = yargitayTask.Result;
+
+        var allSources = claudeSources.Concat(yargitaySources).ToList();
+
+        return Ok(new ChatResponse { Reply = reply, Success = !isError, Sources = allSources });
     }
 }

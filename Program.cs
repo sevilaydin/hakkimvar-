@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddSingleton<KanunService>();
 builder.Services.AddSingleton<ClaudeService>();
+builder.Services.AddSingleton<YargitayService>();
 
 builder.Services.AddCors(options =>
 {
