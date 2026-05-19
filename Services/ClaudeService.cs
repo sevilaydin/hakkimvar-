@@ -104,12 +104,7 @@ public class ClaudeService
         }
     }
 
-    private string BuildSystemText()
-    {
-        if (!_kanunService.HasKanunMetni())
-            return SystemInstructions;
-        return SystemInstructions + "\n\nKANUN METNİ BAĞLAMI:\n\n" + _kanunService.GetKanunMetni();
-    }
+    private string BuildSystemText() => SystemInstructions;
 
     private static (string Reply, List<SourceItem> Sources) ParseSources(string raw)
     {
