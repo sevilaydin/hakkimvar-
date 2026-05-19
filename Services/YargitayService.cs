@@ -30,18 +30,29 @@ public class YargitayService
         var keywords = ExtractKeywords(userMessage);
         if (!keywords.Any()) return new();
 
-        var query = string.Join("+", keywords.Take(3));
+        var query = string.Join(" ", keywords.Take(3));
+        var encodedQuery = Uri.EscapeDataString(query);
+
+        var searchUrl = $"https://karararama.yargitay.gov.tr/YargitayBilgiBankasiIstemciWeb/faces/jsp/ozet_liste.jsp?aranan={encodedQuery}&detay=false";
+        var fallback = new List<SourceItem>
+        {
+            new SourceItem
+            {
+                Title   = $"Yargıtay Kararları: {query}",
+                Summary = $"Yargıtay'ın \"{query}\" konusundaki kararlarını görüntülemek için tıklayın.",
+                Url     = searchUrl
+            }
+        };
 
         try
         {
-            var html = await _httpClient.GetStringAsync(
-                $"https://karararama.yargitay.gov.tr/YargitayBilgiBankasiIstemciWeb/faces/jsp/ozet_liste.jsp?aranan={Uri.EscapeDataString(query)}&detay=false");
-
-            return ParseResults(html);
+            var html = await _httpClient.GetStringAsync(searchUrl);
+            var scraped = ParseResults(html);
+            return scraped.Count > 0 ? scraped : fallback;
         }
         catch
         {
-            return new();
+            return fallback;
         }
     }
 
