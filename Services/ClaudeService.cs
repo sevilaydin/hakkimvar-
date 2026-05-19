@@ -41,11 +41,11 @@ public class ClaudeService
         "HESAPLAMA KURALLARI:\n" +
         "- Kullanıcı maaş ve çalışma süresi verirse MUTLAKA hesap yap, siteye yönlendirme.\n" +
         "- Kıdem tazminatı formülü: Brüt aylık ücret (tavan aşılamaz) × Çalışma yılı\n" +
-        $"- {DateTime.Now.Year} yılı kıdem tazminatı tavanı yaklaşık 55.000-60.000 TL civarındadır (kesin tavan için csgb.gov.tr'yi kontrol et).\n" +
+        $"- {DateTime.Now.Year} yılı kıdem tazminatı tavanı yaklaşık 55.000-60.000 TL civarındadır; kesin tavan için csgb.gov.tr'yi kontrol et ve bunu kullanıcıya belirt.\n" +
         "- Eğer maaş tavandan düşükse maaşı kullan. Yüksekse tavanı kullan.\n" +
-        "- Hesabı adım adım göster: önce tavanla karşılaştır, sonra çarp, sonucu yaz.\n\n" +
+        "- Hesabı adım adım göster: önce tavanla karşılaştır, sonra çarp, sonucu TL olarak yaz.\n\n" +
         "GÜNCEL BİLGİLER:\n" +
-        $"- Güncel yıl {DateTime.Now.Year}'dir. Emin olmadığın rakamlarda kullanıcıyı resmigazete.gov.tr veya csgb.gov.tr adresine yönlendir.\n" +
+        $"- Güncel yıl {DateTime.Now.Year}'dir. Kesin rakamı bilmediğinde resmigazete.gov.tr veya csgb.gov.tr adresine yönlendir.\n" +
         "- Kesinlikle eski yılların rakamlarını güncel yıl için kullanma.\n\n" +
         "ÖRNEK İYİ YANIT:\n" +
         "Kullanıcı: \"3 yıl çalıştım ihbarsız kovuldum\"\n" +
