@@ -16,7 +16,7 @@ public class ClaudeService
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
 
-    private const string SystemInstructions =
+    private static string SystemInstructions =>
         "Sen bir Türk İş Hukuku asistanısın. Adın \"HakkımVar Asistanı\"dır.\n" +
         $"Bugünün tarihi: {DateTime.Now:dd MMMM yyyy}. Güncel yıl {DateTime.Now.Year}'dir.\n\n" +
         "GÜNCEL RAKAMLAR (her yıl Ocak ve Temmuz'da güncellenir):\n" +
