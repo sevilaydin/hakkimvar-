@@ -84,7 +84,7 @@ public class ClaudeService
                     new { role = "system", content = systemText },
                     new { role = "user",   content = userMessage }
                 },
-                max_tokens = 4096,
+                max_tokens = 1500,
                 temperature = 0.3
             };
 

@@ -6,9 +6,7 @@
     <RootNamespace>Hakkimvar</RootNamespace>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Anthropic" Version="*" />
-  </ItemGroup>
+
   <ItemGroup>
     <Content Include="Data\is_kanunu.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

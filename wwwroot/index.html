@@ -662,7 +662,7 @@
     callAPI(text);
   }
 
-  async function callAPI(text) {
+  async function callAPI(text, isRetry = false) {
     isWaiting = true;
     document.getElementById('sendBtn').disabled = true;
     showTyping();
@@ -680,8 +680,22 @@
 
       hideTyping();
 
+      // Render ücretsiz plan uyku modundan çıkıyor olabilir — bir kez otomatik dene
+      if (res.status === 503 && !isRetry) {
+        appendError('⏳ Sunucu uyanıyor, 10 saniye içinde tekrar deneniyor...');
+        await new Promise(r => setTimeout(r, 10000));
+        // Hata mesajını temizle
+        const msgs = document.getElementById('messages');
+        msgs.lastElementChild?.remove();
+        return callAPI(text, true);
+      }
+
       if (!res.ok) {
-        appendError(`Sunucu hatası: ${res.status} ${res.statusText}`);
+        if (res.status === 429) {
+          appendError('İstek limiti doldu, 30 saniye bekleyip tekrar deneyin.');
+        } else {
+          appendError(`Sunucu hatası (${res.status}). Lütfen tekrar deneyin.`);
+        }
         return;
       }
 
@@ -697,7 +711,7 @@
     } catch (err) {
       hideTyping();
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        appendError('Bağlantı hatası — sunucuya ulaşılamıyor. Lütfen arka uç uygulamasının çalıştığından emin olun.');
+        appendError('Bağlantı hatası — sunucuya ulaşılamıyor. Sayfayı yenileyip tekrar deneyin.');
       } else {
         appendError('Beklenmeyen bir hata oluştu: ' + err.message);
       }

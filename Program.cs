@@ -25,4 +25,7 @@ app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 
+// Health check — servis uyanık mı kontrol için
+app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
+
 app.Run();
