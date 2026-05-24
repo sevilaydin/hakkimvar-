@@ -1,4 +1,6 @@
 using Hakkimvar.Services;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,9 +9,34 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<KanunService>();
 builder.Services.AddSingleton<ClaudeService>();
 builder.Services.AddSingleton<YargitayService>();
+
+// Rate limiting — IP başına dakikada max 15 istek
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("chat", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 15,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    options.OnRejected = async (context, _) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            reply = "Çok fazla istek gönderdiniz. Lütfen 1 dakika bekleyiniz.",
+            sources = Array.Empty<object>()
+        });
+    };
+});
 
 builder.Services.AddCors(options =>
 {
@@ -19,6 +46,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseRateLimiter();
 app.UseCors();
 app.UseDefaultFiles();
 app.UseStaticFiles();

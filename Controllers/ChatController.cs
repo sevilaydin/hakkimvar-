@@ -1,6 +1,7 @@
 using Hakkimvar.Models;
 using Hakkimvar.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Hakkimvar.Controllers;
 
@@ -20,6 +21,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("chat")]
     public async Task<ActionResult<ChatResponse>> Post([FromBody] ChatRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Message))

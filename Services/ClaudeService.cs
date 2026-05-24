@@ -10,7 +10,6 @@ namespace Hakkimvar.Services;
 public class ClaudeService
 {
     private readonly HttpClient _httpClient;
-    private readonly KanunService _kanunService;
     private readonly string _apiKey;
 
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
@@ -60,11 +59,10 @@ public class ClaudeService
         "[İş K. Md. 14 — Kıdem tazminatı]\n\n" +
         "⚠️ Bu bilgi genel nitelikte olup hukuki tavsiye yerine geçmez.\"";
 
-    public ClaudeService(IConfiguration configuration, KanunService kanunService)
+    public ClaudeService(IConfiguration configuration)
     {
         _apiKey = configuration["Groq:ApiKey"] ?? "";
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
-        _kanunService = kanunService;
     }
 
     public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
