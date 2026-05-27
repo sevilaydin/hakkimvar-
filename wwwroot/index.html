@@ -397,6 +397,18 @@
     <div class="sidebar-new">
       <button class="btn-new-chat" onclick="newChat()">+ Yeni Sohbet</button>
     </div>
+    <!-- Newsletter -->
+    <div style="margin-top:auto;padding:16px 12px 8px;border-top:1px solid var(--gray-200);">
+      <div style="font-size:.75rem;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">📧 Haber Bülteni</div>
+      <p style="font-size:.78rem;color:#666;margin-bottom:8px;line-height:1.4;">Yeni emsal kararlar ve kanun değişikliklerinden haberdar olun.</p>
+      <input id="newsletterEmail" type="email" placeholder="email@adresiniz.com"
+        style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:.82rem;font-family:inherit;outline:none;margin-bottom:6px;">
+      <button onclick="subscribeNewsletter()"
+        style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;">
+        Abone Ol
+      </button>
+      <div id="newsletterMsg" style="font-size:.77rem;color:var(--green);margin-top:5px;min-height:16px;"></div>
+    </div>
   </aside>
 
   <!-- CHAT AREA -->
@@ -777,6 +789,29 @@
     if (/fesih|işten çıkar/.test(t))       return 'haksiz_fesih';
     if (/maaş|ücret/.test(t))              return 'ucret_uyusmaz';
     return 'diger';
+  }
+
+  // Newsletter abone ol
+  async function subscribeNewsletter() {
+    const emailEl = document.getElementById('newsletterEmail');
+    const email   = emailEl?.value?.trim();
+    if (!email || !email.includes('@')) {
+      alert('Lütfen geçerli bir email adresi girin.');
+      return;
+    }
+    try {
+      const res  = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      document.getElementById('newsletterMsg').textContent = data.message;
+      emailEl.value = '';
+      gaEvent('newsletter_subscribed', {});
+    } catch {
+      document.getElementById('newsletterMsg').textContent = 'Bir hata oluştu, lütfen tekrar deneyin.';
+    }
   }
 </script>
 </body>
