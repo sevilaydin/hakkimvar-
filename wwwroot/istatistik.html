@@ -49,6 +49,15 @@
     .label-map { kidem_tazminati:'Kıdem Tazminatı', ihbar_tazminati:'İhbar Tazminatı', fazla_mesai:'Fazla Mesai', yillik_izin:'Yıllık İzin', mobbing:'Mobbing', is_kazasi:'İş Kazası', istifa:'İstifa', haksiz_fesih:'Haksız Fesih', ucret_uyusmaz:'Ücret Uyuşmazlığı', emeklilik_sgk:'Emeklilik / SGK', diger:'Diğer' }
     .error { color: #c0392b; font-size:.85rem; }
     .empty { color: #aaa; font-size: .85rem; font-style: italic; }
+
+    table { width:100%; border-collapse:collapse; font-size:.84rem; }
+    th    { text-align:left; padding:8px 10px; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; color:#999; border-bottom:2px solid var(--gray-50); }
+    td    { padding:10px 10px; border-bottom:1px solid var(--gray-50); vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafaf8; }
+    .tag  { display:inline-block; font-size:.72rem; font-weight:600; padding:2px 8px; border-radius:99px; background:var(--green-pal); color:var(--green); }
+    .tag.err { background:#fde8e8; color:#c0392b; }
+    .ms   { color:#aaa; font-size:.78rem; }
   </style>
 </head>
 <body>
@@ -91,9 +100,18 @@
       <div class="section-title">📊 Konulara Göre Sorular</div>
       <div id="bars"><div class="empty">Henüz veri yok.</div></div>
     </div>
+
+    <div class="section">
+      <div class="section-title">🕐 Son Sorular <span style="font-size:.78rem;font-weight:400;color:#aaa;">(son 100, sunucu restart'ta sıfırlanır)</span></div>
+      <div id="recentWrap"><div class="empty">Henüz soru gelmedi.</div></div>
+    </div>
   </div>
 
 <script>
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
   const LABELS = {
     kidem_tazminati: 'Kıdem Tazminatı',
     ihbar_tazminati: 'İhbar Tazminatı',
@@ -135,6 +153,34 @@
       if (keys.length === 0) {
         barsEl.innerHTML = '<div class="empty">Henüz soru gelmedi.</div>';
         return;
+      }
+
+      // Son sorular tablosu
+      const recent = data.recent_questions ?? [];
+      const recentWrap = document.getElementById('recentWrap');
+      if (recent.length === 0) {
+        recentWrap.innerHTML = '<div class="empty">Henüz soru gelmedi.</div>';
+      } else {
+        recentWrap.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Saat</th>
+                <th>Konu</th>
+                <th>Soru</th>
+                <th>Süre</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recent.map(q => `
+                <tr>
+                  <td style="white-space:nowrap;color:#888;">${q.asked_at}</td>
+                  <td><span class="tag ${q.is_error ? 'err' : ''}">${LABELS[q.category] ?? q.category}</span></td>
+                  <td>${escHtml(q.preview)}</td>
+                  <td class="ms">${q.response_ms}ms</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
       }
 
       barsEl.innerHTML = keys.map(k => {

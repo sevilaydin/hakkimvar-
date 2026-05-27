@@ -49,15 +49,16 @@ public class ChatController : ControllerBase
         var yargitaySources = yargitayTask.Result;
         var allSources = claudeSources.Concat(yargitaySources).ToList();
 
+        var ms = (int)sw.ElapsedMilliseconds;
         if (isError)
         {
-            _analytics.TrackError();
-            _logger.LogWarning("[{Category}] Hata ({Ms}ms): {Reply}", category, sw.ElapsedMilliseconds, reply);
+            _analytics.TrackError(category, request.Message, ms);
+            _logger.LogWarning("[{Category}] Hata ({Ms}ms): {Reply}", category, ms, reply);
         }
         else
         {
-            _analytics.TrackQuestion(category);
-            _logger.LogInformation("[{Category}] Yanıt ({Ms}ms, {Count} kaynak)", category, sw.ElapsedMilliseconds, allSources.Count);
+            _analytics.TrackQuestion(category, request.Message, ms);
+            _logger.LogInformation("[{Category}] Yanıt ({Ms}ms, {Count} kaynak)", category, ms, allSources.Count);
         }
 
         return Ok(new ChatResponse { Reply = reply, Success = !isError, Sources = allSources });
