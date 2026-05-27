@@ -11,6 +11,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddSingleton<ClaudeService>();
 builder.Services.AddSingleton<YargitayService>();
+builder.Services.AddSingleton<AnalyticsService>();
 
 // Rate limiting — IP başına dakikada max 15 istek
 builder.Services.AddRateLimiter(options =>

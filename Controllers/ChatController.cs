@@ -9,15 +9,21 @@ namespace Hakkimvar.Controllers;
 [Route("api/[controller]")]
 public class ChatController : ControllerBase
 {
-    private readonly ClaudeService _claudeService;
-    private readonly YargitayService _yargitayService;
+    private readonly ClaudeService     _claudeService;
+    private readonly YargitayService   _yargitayService;
+    private readonly AnalyticsService  _analytics;
     private readonly ILogger<ChatController> _logger;
 
-    public ChatController(ClaudeService claudeService, YargitayService yargitayService, ILogger<ChatController> logger)
+    public ChatController(
+        ClaudeService claudeService,
+        YargitayService yargitayService,
+        AnalyticsService analytics,
+        ILogger<ChatController> logger)
     {
-        _claudeService = claudeService;
+        _claudeService   = claudeService;
         _yargitayService = yargitayService;
-        _logger = logger;
+        _analytics       = analytics;
+        _logger          = logger;
     }
 
     [HttpPost]
@@ -27,8 +33,9 @@ public class ChatController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new ChatResponse { Success = false, Error = "Mesaj boş olamaz." });
 
-        var preview = request.Message.Length > 80 ? request.Message[..80] + "…" : request.Message;
-        _logger.LogInformation("Soru alındı: {Preview}", preview);
+        var category = CategoryService.Detect(request.Message);
+        var preview  = request.Message.Length > 80 ? request.Message[..80] + "…" : request.Message;
+        _logger.LogInformation("[{Category}] Soru: {Preview}", category, preview);
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -43,9 +50,15 @@ public class ChatController : ControllerBase
         var allSources = claudeSources.Concat(yargitaySources).ToList();
 
         if (isError)
-            _logger.LogWarning("Hata yanıtı ({Ms}ms): {Reply}", sw.ElapsedMilliseconds, reply);
+        {
+            _analytics.TrackError();
+            _logger.LogWarning("[{Category}] Hata ({Ms}ms): {Reply}", category, sw.ElapsedMilliseconds, reply);
+        }
         else
-            _logger.LogInformation("Yanıt gönderildi ({Ms}ms, {Count} kaynak)", sw.ElapsedMilliseconds, allSources.Count);
+        {
+            _analytics.TrackQuestion(category);
+            _logger.LogInformation("[{Category}] Yanıt ({Ms}ms, {Count} kaynak)", category, sw.ElapsedMilliseconds, allSources.Count);
+        }
 
         return Ok(new ChatResponse { Reply = reply, Success = !isError, Sources = allSources });
     }
