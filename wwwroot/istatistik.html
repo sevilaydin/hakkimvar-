@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HakkımVar – İstatistikler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #F7F4EF;
+      --green:   #2D6A4F;
+      --green-lt:#40916C;
+      --white:   #FFFFFF;
+      --gray-50: #F0EDE8;
+      --gray-200:#D4CFC8;
+      --text:    #2C2825;
+      --radius:  12px;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 32px 16px; }
+    h1   { font-size: 1.6rem; font-weight: 700; color: var(--green); margin-bottom: 6px; }
+    .sub { color: #666; font-size: .9rem; margin-bottom: 32px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: var(--white); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+    .card-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 6px; }
+    .card-value { font-size: 2.2rem; font-weight: 700; color: var(--green); }
+    .card-sub   { font-size: .8rem; color: #aaa; margin-top: 2px; }
+
+    .section { background: var(--white); border-radius: var(--radius); padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 20px; }
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 18px; }
+
+    .bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .bar-label { width: 160px; font-size: .84rem; color: #555; flex-shrink: 0; }
+    .bar-track { flex: 1; background: var(--gray-50); border-radius: 99px; height: 10px; overflow: hidden; }
+    .bar-fill  { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-lt)); border-radius: 99px; transition: width .6s ease; }
+    .bar-count { width: 36px; text-align: right; font-size: .82rem; font-weight: 600; color: var(--green); }
+
+    .refresh-btn {
+      background: var(--green); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: .85rem; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .2s;
+    }
+    .refresh-btn:hover { background: var(--green-lt); }
+    .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .back-link  { font-size: .85rem; color: var(--green); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+
+    .label-map { kidem_tazminati:'Kıdem Tazminatı', ihbar_tazminati:'İhbar Tazminatı', fazla_mesai:'Fazla Mesai', yillik_izin:'Yıllık İzin', mobbing:'Mobbing', is_kazasi:'İş Kazası', istifa:'İstifa', haksiz_fesih:'Haksız Fesih', ucret_uyusmaz:'Ücret Uyuşmazlığı', emeklilik_sgk:'Emeklilik / SGK', diger:'Diğer' }
+    .error { color: #c0392b; font-size:.85rem; }
+    .empty { color: #aaa; font-size: .85rem; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div style="max-width:760px;margin:0 auto;">
+    <div class="header-row">
+      <div>
+        <h1>⚖️ HakkımVar İstatistikler</h1>
+        <div class="sub" id="asOf">Yükleniyor…</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <a class="back-link" href="/">← Asistana Dön</a>
+        <button class="refresh-btn" onclick="load()">↻ Yenile</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">Toplam Soru</div>
+        <div class="card-value" id="total">—</div>
+        <div class="card-sub">sunucu başlangıcından beri</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Hata Sayısı</div>
+        <div class="card-value" id="errors">—</div>
+        <div class="card-sub">API / bağlantı hataları</div>
+      </div>
+      <div class="card">
+        <div class="card-label">En Yoğun Saat</div>
+        <div class="card-value" id="hour">—</div>
+        <div class="card-sub">UTC saat dilimi</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Başarı Oranı</div>
+        <div class="card-value" id="success">—</div>
+        <div class="card-sub">hatasız yanıt yüzdesi</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📊 Konulara Göre Sorular</div>
+      <div id="bars"><div class="empty">Henüz veri yok.</div></div>
+    </div>
+  </div>
+
+<script>
+  const LABELS = {
+    kidem_tazminati: 'Kıdem Tazminatı',
+    ihbar_tazminati: 'İhbar Tazminatı',
+    fazla_mesai:     'Fazla Mesai',
+    yillik_izin:     'Yıllık İzin',
+    mobbing:         'Mobbing / Taciz',
+    is_kazasi:       'İş Kazası',
+    istifa:          'İstifa',
+    haksiz_fesih:    'Haksız Fesih',
+    ucret_uyusmaz:   'Ücret Uyuşmazlığı',
+    emeklilik_sgk:   'Emeklilik / SGK',
+    diger:           'Diğer',
+  };
+
+  async function load() {
+    try {
+      const res  = await fetch('/stats');
+      const data = await res.json();
+
+      document.getElementById('total').textContent  = data.total_questions ?? 0;
+      document.getElementById('errors').textContent = data.total_errors    ?? 0;
+
+      const hour = data.busiest_hour_utc;
+      document.getElementById('hour').textContent = (hour != null) ? `${hour}:00` : '—';
+
+      const total = data.total_questions || 0;
+      const errs  = data.total_errors   || 0;
+      const rate  = total + errs > 0 ? Math.round((total / (total + errs)) * 100) : 100;
+      document.getElementById('success').textContent = rate + '%';
+
+      const asOf = data.as_of_utc ? new Date(data.as_of_utc).toLocaleString('tr-TR') : '';
+      document.getElementById('asOf').textContent = `Son güncelleme: ${asOf}`;
+
+      const cats = data.by_category ?? {};
+      const keys = Object.keys(cats);
+      const max  = keys.length > 0 ? Math.max(...Object.values(cats)) : 1;
+
+      const barsEl = document.getElementById('bars');
+      if (keys.length === 0) {
+        barsEl.innerHTML = '<div class="empty">Henüz soru gelmedi.</div>';
+        return;
+      }
+
+      barsEl.innerHTML = keys.map(k => {
+        const count = cats[k];
+        const pct   = max > 0 ? (count / max * 100).toFixed(1) : 0;
+        const label = LABELS[k] ?? k;
+        return `
+          <div class="bar-row">
+            <div class="bar-label">${label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+            <div class="bar-count">${count}</div>
+          </div>`;
+      }).join('');
+
+    } catch (e) {
+      document.getElementById('asOf').innerHTML = '<span class="error">Veri alınamadı.</span>';
+    }
+  }
+
+  load();
+  setInterval(load, 30000); // 30 saniyede bir otomatik yenile
+</script>
+</body>
+</html>
