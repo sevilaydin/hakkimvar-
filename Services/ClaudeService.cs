@@ -2,7 +2,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Hakkimvar.Models;
 
 namespace Hakkimvar.Services;
@@ -110,55 +109,21 @@ public class ClaudeService
                 .GetProperty("content")
                 .GetString() ?? "";
 
-            var (cleanReply, sources) = ParseSources(text);
-            return (cleanReply, sources, false);
+            return (text.Trim(), new List<SourceItem>(), false);
         }
         catch (TaskCanceledException)
         {
-            return ("İstek zaman aşımına uğradı, lütfen tekrar deneyin.", new List<SourceItem>(), true);
+            return ("Yanıt zaman aşımına uğradı, lütfen tekrar deneyin.", new List<SourceItem>(), true);
         }
         catch (HttpRequestException)
         {
-            return ("Bağlantı kurulamadı, internet bağlantınızı kontrol edin.", new List<SourceItem>(), true);
+            return ("Sunucuya bağlanılamadı, lütfen tekrar deneyin.", new List<SourceItem>(), true);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return ($"Hata: {ex.Message[..Math.Min(100, ex.Message.Length)]}", new List<SourceItem>(), true);
+            return ("Beklenmeyen bir hata oluştu, lütfen tekrar deneyin.", new List<SourceItem>(), true);
         }
     }
 
     private string BuildSystemText() => SystemInstructions;
-
-    private static (string Reply, List<SourceItem> Sources) ParseSources(string raw)
-    {
-        var sources = new List<SourceItem>();
-
-        var blockMatch = Regex.Match(
-            raw,
-            @"EMSAL_KARARLAR_BASLANGIC\s*(.*?)\s*EMSAL_KARARLAR_BITIS",
-            RegexOptions.Singleline);
-
-        if (!blockMatch.Success)
-            return (raw.Trim(), sources);
-
-        var block = blockMatch.Value;
-        var cleanReply = raw.Replace(block, "").Trim();
-
-        var entries = Regex.Matches(
-            block,
-            @"KARAR:\s*(?<title>[^\n]+)\s+OZET:\s*(?<summary>[^\n]+)\s+URL:\s*(?<url>[^\n]+)",
-            RegexOptions.IgnoreCase);
-
-        foreach (Match m in entries)
-        {
-            sources.Add(new SourceItem
-            {
-                Title   = m.Groups["title"].Value.Trim(),
-                Summary = m.Groups["summary"].Value.Trim(),
-                Url     = m.Groups["url"].Value.Trim()
-            });
-        }
-
-        return (cleanReply, sources);
-    }
 }

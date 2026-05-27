@@ -29,6 +29,16 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
 
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Google Analytics — G-XXXXXXXXXX yerine kendi GA4 ID'nizi yazın -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script> -->
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -682,6 +692,7 @@
     document.getElementById('chips')?.remove();
     document.getElementById('welcomeCard')?.remove();
     appendUserMsg(text);
+    gaEvent('question_asked', { category: detectCategory(text), question_length: text.length });
     callAPI(text);
   }
 
@@ -729,7 +740,9 @@
         return;
       }
 
-      appendAssistantMsg(data.reply ?? 'Yanıt alınamadı.', data.sources ?? []);
+      const sources = data.sources ?? [];
+      appendAssistantMsg(data.reply ?? 'Yanıt alınamadı.', sources);
+      gaEvent('answer_received', { sources_count: sources.length, category: detectCategory(text) });
 
     } catch (err) {
       hideTyping();
@@ -743,6 +756,26 @@
       document.getElementById('sendBtn').disabled = false;
       document.getElementById('userInput').focus();
     }
+  }
+
+  // GA4 event helper — GA aktif değilse sessizce atlar
+  function gaEvent(name, params) {
+    if (typeof gtag === 'function') gtag('event', name, params);
+  }
+
+  // Soruyu kategorize et
+  function detectCategory(text) {
+    const t = text.toLowerCase();
+    if (/kıdem|tazminat/.test(t))          return 'kidem_tazminati';
+    if (/ihbar|bildirim süresi/.test(t))   return 'ihbar_tazminati';
+    if (/fazla mesai|mesai/.test(t))       return 'fazla_mesai';
+    if (/izin|yıllık/.test(t))             return 'yillik_izin';
+    if (/mobbing|taciz|baskı/.test(t))     return 'mobbing';
+    if (/iş kazası|kaza/.test(t))          return 'is_kazasi';
+    if (/istifa/.test(t))                  return 'istifa';
+    if (/fesih|işten çıkar/.test(t))       return 'haksiz_fesih';
+    if (/maaş|ücret/.test(t))              return 'ucret_uyusmaz';
+    return 'diger';
   }
 </script>
 </body>

@@ -27,15 +27,25 @@ public class ChatController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new ChatResponse { Success = false, Error = "Mesaj boş olamaz." });
 
-        var claudeTask = _claudeService.GetResponseAsync(request.Message);
+        var preview = request.Message.Length > 80 ? request.Message[..80] + "…" : request.Message;
+        _logger.LogInformation("Soru alındı: {Preview}", preview);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        var claudeTask   = _claudeService.GetResponseAsync(request.Message);
         var yargitayTask = _yargitayService.SearchAsync(request.Message);
 
         await Task.WhenAll(claudeTask, yargitayTask);
 
+        sw.Stop();
         var (reply, claudeSources, isError) = claudeTask.Result;
         var yargitaySources = yargitayTask.Result;
-
         var allSources = claudeSources.Concat(yargitaySources).ToList();
+
+        if (isError)
+            _logger.LogWarning("Hata yanıtı ({Ms}ms): {Reply}", sw.ElapsedMilliseconds, reply);
+        else
+            _logger.LogInformation("Yanıt gönderildi ({Ms}ms, {Count} kaynak)", sw.ElapsedMilliseconds, allSources.Count);
 
         return Ok(new ChatResponse { Reply = reply, Success = !isError, Sources = allSources });
     }
