@@ -10,6 +10,7 @@ public class GroqService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
+    private readonly string _kanunMetni;
 
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
@@ -58,9 +59,10 @@ public class GroqService
         "[İş K. Md. 14 — Kıdem tazminatı]\n\n" +
         "⚠️ Bu bilgi genel nitelikte olup hukuki tavsiye yerine geçmez.\"";
 
-    public GroqService(IConfiguration configuration)
+    public GroqService(IConfiguration configuration, KanunService kanunService)
     {
-        _apiKey = configuration["Groq:ApiKey"] ?? "";
+        _apiKey    = configuration["Groq:ApiKey"] ?? "";
+        _kanunMetni = kanunService.GetKanunMetni();
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
     }
 
@@ -125,5 +127,14 @@ public class GroqService
         }
     }
 
-    private string BuildSystemText() => SystemInstructions;
+    private string BuildSystemText()
+    {
+        if (string.IsNullOrWhiteSpace(_kanunMetni))
+            return SystemInstructions;
+
+        return SystemInstructions +
+               "\n\n---\nAŞAĞIDA REFERANS OLARAK 4857 SAYILI İŞ KANUNU TAM METNİ VERİLMİŞTİR.\n" +
+               "Yanıt verirken bu metni birincil kaynak olarak kullan.\n---\n" +
+               _kanunMetni;
+    }
 }
