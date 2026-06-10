@@ -9,13 +9,13 @@ namespace Hakkimvar.Controllers;
 [Route("api/[controller]")]
 public class ChatController : ControllerBase
 {
-    private readonly ClaudeService     _claudeService;
+    private readonly GroqService       _claudeService;
     private readonly YargitayService   _yargitayService;
     private readonly AnalyticsService  _analytics;
     private readonly ILogger<ChatController> _logger;
 
     public ChatController(
-        ClaudeService claudeService,
+        GroqService claudeService,
         YargitayService yargitayService,
         AnalyticsService analytics,
         ILogger<ChatController> logger)

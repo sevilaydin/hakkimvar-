@@ -6,7 +6,7 @@ using Hakkimvar.Models;
 
 namespace Hakkimvar.Services;
 
-public class ClaudeService
+public class GroqService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
@@ -58,7 +58,7 @@ public class ClaudeService
         "[İş K. Md. 14 — Kıdem tazminatı]\n\n" +
         "⚠️ Bu bilgi genel nitelikte olup hukuki tavsiye yerine geçmez.\"";
 
-    public ClaudeService(IConfiguration configuration)
+    public GroqService(IConfiguration configuration)
     {
         _apiKey = configuration["Groq:ApiKey"] ?? "";
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };

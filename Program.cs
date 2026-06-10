@@ -9,7 +9,7 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<ClaudeService>();
+builder.Services.AddSingleton<GroqService>();
 builder.Services.AddSingleton<YargitayService>();
 builder.Services.AddSingleton<AnalyticsService>();
 
