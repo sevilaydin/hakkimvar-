@@ -11,11 +11,14 @@ public class GroqService
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
     private readonly string _kanunMetni;
+    private readonly decimal _kidemTavan;
+    private readonly string  _kidemDonem;
+    private readonly string  _kidemYururluk;
 
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
 
-    private static string SystemInstructions =>
+    private string SystemInstructions =>
         $"Sen HakkımVar platformunun yapay zeka asistanısın.\n" +
         $"Türk İş Hukuku konularında vatandaşlara bilgi veriyorsun.\n" +
         $"Bugünün tarihi: {DateTime.Now:dd MMMM yyyy}. Güncel yıl {DateTime.Now.Year}'dir.\n\n" +
@@ -39,14 +42,17 @@ public class GroqService
         "- Tahmin veya yorum yapma, sadece kanuna dayan\n\n" +
         "HESAPLAMA KURALLARI:\n" +
         "- Kullanıcı maaş ve çalışma süresi verirse MUTLAKA hesap yap, siteye yönlendirme.\n" +
-        "- Kıdem tazminatı formülü: Brüt aylık ücret (tavan aşılamaz) × Çalışma yılı\n" +
-        "- 2026 yılı kıdem tazminatı tavanı (01.01.2026-30.06.2026): 64.948,77 TL (kesin rakam, Hazine ve Maliye Bakanlığı Genelgesi 06.01.2026)\n" +
-        "- Eğer maaş tavandan düşükse maaşı kullan. Yüksekse tavanı (64.948,77 TL) kullan.\n" +
+        "- Kıdem tazminatı formülü: Giydirilmiş brüt aylık ücret (tavan aşılamaz) × Çalışma yılı\n" +
+        "- Giydirilmiş brüt ücret: çıplak brüt maaş + yol, yemek, ikramiye gibi nakdi yan haklar\n" +
+        $"- {DateTime.Now.Year} yılı kıdem tazminatı tavanı ({_kidemDonem}, {_kidemYururluk} itibarıyla): {_kidemTavan:N2} TL (kesin rakam, Hazine ve Maliye Bakanlığı Genelgesi)\n" +
+        $"- Eğer giydirilmiş brüt ücret tavandan düşükse ücretikullan. Yüksekse tavanı ({_kidemTavan:N2} TL) kullan.\n" +
+        "- İhbar tazminatı formülü: Günlük brüt ücret (brüt aylık / 30) × İhbar süresi (gün)\n" +
+        "- İhbar süreleri: 0-6 ay = 2 hafta, 6ay-1,5yıl = 4 hafta, 1,5-3yıl = 6 hafta, 3yıl+ = 8 hafta\n" +
         "- Hesabı adım adım göster: önce tavanla karşılaştır, sonra çarp, sonucu TL olarak net yaz.\n" +
-        "- Kesinlikle 'yaklaşık', 'civarında', 'farzedelim ki' gibi belirsiz ifadeler kullanma. Tavan kesin: 64.948,77 TL.\n\n" +
+        $"- Kesinlikle 'yaklaşık', 'civarında', 'farzedelim ki' gibi belirsiz ifadeler kullanma. Tavan kesin: {_kidemTavan:N2} TL.\n\n" +
         "GÜNCEL BİLGİLER:\n" +
         $"- Güncel yıl {DateTime.Now.Year}'dir.\n" +
-        "- 2026 kıdem tazminatı tavanı: 64.948,77 TL (Ocak-Haziran 2026). Bu rakamı kullan.\n\n" +
+        $"- {DateTime.Now.Year} kıdem tazminatı tavanı: {_kidemTavan:N2} TL ({_kidemDonem}). Bu rakamı kullan.\n\n" +
         "ÖRNEK İYİ YANIT:\n" +
         "Kullanıcı: \"3 yıl çalıştım ihbarsız kovuldum\"\n" +
         "Yanıt:\n" +
@@ -61,9 +67,12 @@ public class GroqService
 
     public GroqService(IConfiguration configuration, KanunService kanunService)
     {
-        _apiKey    = configuration["Groq:ApiKey"] ?? "";
-        _kanunMetni = kanunService.GetKanunMetni();
-        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
+        _apiKey        = configuration["Groq:ApiKey"] ?? "";
+        _kanunMetni    = kanunService.GetKanunMetni();
+        _kidemTavan    = configuration.GetValue<decimal>("KidemTazminati:Tavan", 64948.77m);
+        _kidemDonem    = configuration["KidemTazminati:Donem"]       ?? "Ocak-Haziran 2026";
+        _kidemYururluk = configuration["KidemTazminati:YururlukTarihi"] ?? "01.01.2026";
+        _httpClient    = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
     }
 
     public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
