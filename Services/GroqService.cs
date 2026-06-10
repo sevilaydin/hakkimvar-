@@ -45,7 +45,7 @@ public class GroqService
         "- Kıdem tazminatı formülü: Giydirilmiş brüt aylık ücret (tavan aşılamaz) × Çalışma yılı\n" +
         "- Giydirilmiş brüt ücret: çıplak brüt maaş + yol, yemek, ikramiye gibi nakdi yan haklar\n" +
         $"- {DateTime.Now.Year} yılı kıdem tazminatı tavanı ({_kidemDonem}, {_kidemYururluk} itibarıyla): {_kidemTavan:N2} TL (kesin rakam, Hazine ve Maliye Bakanlığı Genelgesi)\n" +
-        $"- Eğer giydirilmiş brüt ücret tavandan düşükse ücretikullan. Yüksekse tavanı ({_kidemTavan:N2} TL) kullan.\n" +
+        $"- Eğer giydirilmiş brüt ücret tavandan düşükse ücreti kullan. Yüksekse tavanı ({_kidemTavan:N2} TL) kullan.\n" +
         "- İhbar tazminatı formülü: Günlük brüt ücret (brüt aylık / 30) × İhbar süresi (gün)\n" +
         "- İhbar süreleri: 0-6 ay = 2 hafta, 6ay-1,5yıl = 4 hafta, 1,5-3yıl = 6 hafta, 3yıl+ = 8 hafta\n" +
         "- Hesabı adım adım göster: önce tavanla karşılaştır, sonra çarp, sonucu TL olarak net yaz.\n" +
