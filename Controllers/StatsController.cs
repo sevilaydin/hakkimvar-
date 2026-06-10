@@ -7,10 +7,25 @@ namespace Hakkimvar.Controllers;
 public class StatsController : ControllerBase
 {
     private readonly AnalyticsService _analytics;
+    private readonly string _statsKey;
 
-    public StatsController(AnalyticsService analytics) => _analytics = analytics;
+    public StatsController(AnalyticsService analytics, IConfiguration configuration)
+    {
+        _analytics = analytics;
+        _statsKey  = configuration["Stats:ApiKey"] ?? "";
+    }
 
     // GET /stats — canlı istatistikler
     [HttpGet("stats")]
-    public IActionResult GetStats() => Ok(_analytics.GetStats());
+    public IActionResult GetStats()
+    {
+        if (!string.IsNullOrWhiteSpace(_statsKey))
+        {
+            var provided = Request.Headers["X-Stats-Key"].FirstOrDefault() ?? "";
+            if (provided != _statsKey)
+                return Unauthorized(new { error = "Geçersiz veya eksik X-Stats-Key header." });
+        }
+
+        return Ok(_analytics.GetStats());
+    }
 }

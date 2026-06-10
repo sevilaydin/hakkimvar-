@@ -126,9 +126,17 @@
     diger:           'Diğer',
   };
 
+  // Stats sayfasına erişim için ortam değişkeninden veya URL param'dan key alınır
+  const STATS_KEY = new URLSearchParams(window.location.search).get('key') ?? '';
+
   async function load() {
     try {
-      const res  = await fetch('/stats');
+      const headers = STATS_KEY ? { 'X-Stats-Key': STATS_KEY } : {};
+      const res  = await fetch('/stats', { headers });
+      if (res.status === 401) {
+        document.getElementById('asOf').innerHTML = '<span class="error">Erişim reddedildi. URL\'ye ?key=... ekleyin.</span>';
+        return;
+      }
       const data = await res.json();
 
       document.getElementById('total').textContent  = data.total_questions ?? 0;
