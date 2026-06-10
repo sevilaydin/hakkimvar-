@@ -94,11 +94,6 @@
         <div class="card-value" id="success">—</div>
         <div class="card-sub">hatasız yanıt yüzdesi</div>
       </div>
-      <div class="card">
-        <div class="card-label">Bülten Abonesi</div>
-        <div class="card-value" id="subscribers">—</div>
-        <div class="card-sub">aktif newsletter abonesi</div>
-      </div>
     </div>
 
     <div class="section">
@@ -135,17 +130,6 @@
     try {
       const res  = await fetch('/stats');
       const data = await res.json();
-      const live = data.live ?? data; // geriye dönük uyumluluk
-
-      // Bülten abonesi sayısı
-      try {
-        const sub = await fetch('/api/newsletter/count');
-        const sd  = await sub.json();
-        document.getElementById('subscribers').textContent = sd.active_subscribers ?? '—';
-      } catch { document.getElementById('subscribers').textContent = '—'; }
-
-      // live istatistikleri güncelle
-      Object.assign(data, live);
 
       document.getElementById('total').textContent  = data.total_questions ?? 0;
       document.getElementById('errors').textContent = data.total_errors    ?? 0;

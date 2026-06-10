@@ -8,20 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Database -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore"                       Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design"                Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"                Version="8.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"               Version="8.0.0" />
-    <!-- Caching -->
-    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis"    Version="8.0.0" />
-    <!-- Email -->
-    <PackageReference Include="SendGrid"                                            Version="9.29.3" />
-    <!-- PDF -->
-    <PackageReference Include="QuestPDF"                                            Version="2024.3.4" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Data\is_kanunu.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
