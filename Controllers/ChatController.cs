@@ -39,7 +39,7 @@ public class ChatController : ControllerBase
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        var claudeTask   = _claudeService.GetResponseAsync(request.Message);
+        var claudeTask   = _claudeService.GetResponseAsync(request.Message, category);
         var yargitayTask = _yargitayService.SearchAsync(request.Message);
 
         await Task.WhenAll(claudeTask, yargitayTask);

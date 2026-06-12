@@ -8,12 +8,12 @@ namespace Hakkimvar.Services;
 
 public class GroqService
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
-    private readonly string _kanunMetni;
-    private readonly decimal _kidemTavan;
-    private readonly string  _kidemDonem;
-    private readonly string  _kidemYururluk;
+    private readonly HttpClient   _httpClient;
+    private readonly string       _apiKey;
+    private readonly KanunService _kanunService;
+    private readonly decimal      _kidemTavan;
+    private readonly string       _kidemDonem;
+    private readonly string       _kidemYururluk;
 
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
@@ -68,21 +68,21 @@ public class GroqService
     public GroqService(IConfiguration configuration, KanunService kanunService)
     {
         _apiKey        = configuration["Groq:ApiKey"] ?? "";
-        _kanunMetni    = kanunService.GetKanunMetni();
+        _kanunService  = kanunService;
         _kidemTavan    = configuration.GetValue<decimal>("KidemTazminati:Tavan", 64948.77m);
         _kidemDonem    = configuration["KidemTazminati:Donem"]       ?? "Ocak-Haziran 2026";
         _kidemYururluk = configuration["KidemTazminati:YururlukTarihi"] ?? "01.01.2026";
         _httpClient    = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
     }
 
-    public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage)
+    public async Task<(string Reply, List<SourceItem> Sources, bool IsError)> GetResponseAsync(string userMessage, string category = "diger")
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
             return ("HATA: Groq API key tanımlı değil. Groq__ApiKey env var ekleyin.", new List<SourceItem>(), true);
 
         try
         {
-            var systemText = BuildSystemText();
+            var systemText = BuildSystemText(category);
 
             var requestBody = new
             {
@@ -136,14 +136,15 @@ public class GroqService
         }
     }
 
-    private string BuildSystemText()
+    private string BuildSystemText(string category)
     {
-        if (string.IsNullOrWhiteSpace(_kanunMetni))
+        var articles = _kanunService.GetArticlesForCategory(category);
+        if (string.IsNullOrWhiteSpace(articles))
             return SystemInstructions;
 
         return SystemInstructions +
-               "\n\n---\nAŞAĞIDA REFERANS OLARAK 4857 SAYILI İŞ KANUNU TAM METNİ VERİLMİŞTİR.\n" +
-               "Yanıt verirken bu metni birincil kaynak olarak kullan.\n---\n" +
-               _kanunMetni;
+               "\n\n---\nAŞAĞIDA BU SORUYLA İLGİLİ 4857 SAYILI İŞ KANUNU MADDELERİ VERİLMİŞTİR.\n" +
+               "Yanıt verirken bu maddeleri birincil kaynak olarak kullan.\n---\n" +
+               articles;
     }
 }
