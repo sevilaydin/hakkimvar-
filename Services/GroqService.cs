@@ -16,7 +16,7 @@ public class GroqService
     private readonly string       _kidemYururluk;
 
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
-    private const string Model = "llama-3.3-70b-versatile";
+    private const string Model = "llama-3.1-8b-instant";
 
     private string SystemInstructions =>
         $"Sen HakkımVar platformunun yapay zeka asistanısın.\n" +
