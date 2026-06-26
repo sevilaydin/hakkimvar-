@@ -105,7 +105,23 @@ public class GroqService
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.SendAsync(request);
+            HttpResponseMessage response;
+            int retryCount = 0;
+            while (true)
+            {
+                request = new HttpRequestMessage(HttpMethod.Post, GroqEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                response = await _httpClient.SendAsync(request);
+
+                if ((int)response.StatusCode == 429 && retryCount < 3)
+                {
+                    retryCount++;
+                    await Task.Delay(10000); // 10 saniye bekle
+                    continue;
+                }
+                break;
+            }
 
             if (!response.IsSuccessStatusCode)
             {
