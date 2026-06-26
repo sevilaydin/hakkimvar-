@@ -366,29 +366,29 @@
   <aside class="sidebar">
     <div class="sidebar-title">Konu Alanları</div>
 
-    <button class="cat-btn active" data-cat="İşten Çıkarma" onclick="selectCat(this)">
-      <div class="cat-icon"><span>🚪</span></div>
-      <span class="cat-label">İşten Çıkarma</span>
+    <button class="cat-btn active" data-cat="İş Hukuku" onclick="selectCat(this)">
+      <div class="cat-icon"><span>⚖️</span></div>
+      <span class="cat-label">İş Hukuku</span>
     </button>
-    <button class="cat-btn" data-cat="Maaş & Ücret" onclick="selectCat(this)">
-      <div class="cat-icon"><span>💰</span></div>
-      <span class="cat-label">Maaş & Ücret</span>
+    <button class="cat-btn" data-cat="Kıdem & Tazminat" onclick="selectCat(this)">
+      <div class="cat-icon"><span>📋</span></div>
+      <span class="cat-label">Kıdem & Tazminat</span>
     </button>
-    <button class="cat-btn" data-cat="İzin Hakları" onclick="selectCat(this)">
-      <div class="cat-icon"><span>🌴</span></div>
-      <span class="cat-label">İzin Hakları</span>
-    </button>
-    <button class="cat-btn" data-cat="Mobbing" onclick="selectCat(this)">
-      <div class="cat-icon"><span>🛡️</span></div>
-      <span class="cat-label">Mobbing</span>
+    <button class="cat-btn" data-cat="Fesih & İspat" onclick="selectCat(this)">
+      <div class="cat-icon"><span>🔍</span></div>
+      <span class="cat-label">Fesih & İspat</span>
     </button>
     <button class="cat-btn" data-cat="SGK & Sigorta" onclick="selectCat(this)">
-      <div class="cat-icon"><span>🏥</span></div>
+      <div class="cat-icon"><span>🏛️</span></div>
       <span class="cat-label">SGK & Sigorta</span>
     </button>
-    <button class="cat-btn" data-cat="İş Kazası" onclick="selectCat(this)">
-      <div class="cat-icon"><span>⚠️</span></div>
-      <span class="cat-label">İş Kazası</span>
+    <button class="cat-btn" data-cat="Emsal Kararlar" onclick="selectCat(this)">
+      <div class="cat-icon"><span>📚</span></div>
+      <span class="cat-label">Emsal Kararlar</span>
+    </button>
+    <button class="cat-btn" data-cat="Hesaplamalar" onclick="selectCat(this)">
+      <div class="cat-icon"><span>🧮</span></div>
+      <span class="cat-label">Hesaplamalar</span>
     </button>
 
     <div class="sidebar-divider"></div>
@@ -402,10 +402,10 @@
   <main class="chat-area">
 
     <div class="chat-header">
-      <div class="chat-header-icon" id="headerIcon">🚪</div>
+      <div class="chat-header-icon" id="headerIcon">⚖️</div>
       <div>
-        <div class="chat-header-title" id="headerTitle">İşten Çıkarma</div>
-        <div class="chat-header-sub">Kıdem, ihbar tazminatı ve haklarınız hakkında sorularınızı sorun</div>
+        <div class="chat-header-title" id="headerTitle">İş Hukuku</div>
+        <div class="chat-header-sub">4857 sayılı Kanun kapsamında hukuki araştırma yapın</div>
       </div>
     </div>
 
@@ -441,75 +441,33 @@
     ? 'http://localhost:5000/api/chat'
     : `${window.location.origin}/api/chat`;
   let isWaiting = false;
-  let currentCat = 'İşten Çıkarma';
-  const catHistory = {}; // kategori adı → messages div innerHTML
+  let currentCat = 'İş Hukuku';
+  const catHistory = {};
 
   const catMeta = {
-    'İşten Çıkarma': {
-      icon: '🚪',
-      sub: 'Kıdem, ihbar tazminatı ve fesih hakları hakkında sorularınızı sorun',
-      chips: [
-        'Kıdem tazminatı ne zaman alınır?',
-        'İhbar sürem ne kadar?',
-        'Haksız fesih nedir?',
-        'İstifa edersem kıdem alabilir miyim?',
-        'İşveren hangi durumlarda işçi çıkarabilir?',
-      ]
+    'İş Hukuku': {
+      icon: '⚖️',
+      sub: '4857 sayılı Kanun kapsamında hukuki araştırma yapın',
     },
-    'Maaş & Ücret': {
-      icon: '💰',
-      sub: 'Ücret, fazla mesai ve ödeme hakları hakkında sorularınızı sorun',
-      chips: [
-        'Fazla mesai ücreti nasıl hesaplanır?',
-        'Asgari ücret ne kadar?',
-        'Maaşım geç ödendi ne yapabilirim?',
-        'Yıllık izin ücreti nasıl hesaplanır?',
-        'Prim ve ikramiye hakkım var mı?',
-      ]
+    'Kıdem & Tazminat': {
+      icon: '📋',
+      sub: 'Kıdem, ihbar ve kötü niyet tazminatı hesaplama ve koşulları',
     },
-    'İzin Hakları': {
-      icon: '🌴',
-      sub: 'Yıllık izin, mazeret izni ve doğum izni hakkında sorularınızı sorun',
-      chips: [
-        'Yıllık izin hakkım kaç gün?',
-        'Doğum izni kaç gün sürer?',
-        'Hastalık izninde maaşım ödenir mi?',
-        'Mazeret izni nedir, kaç gün?',
-        'Ücretsiz izin almak zorunda mıyım?',
-      ]
-    },
-    'Mobbing': {
-      icon: '🛡️',
-      sub: 'İş yerinde psikolojik tacize karşı haklarınızı öğrenin',
-      chips: [
-        'Mobbing nedir, nasıl ispat edilir?',
-        'Mobbinge uğruyorum ne yapabilirim?',
-        'Mobbing nedeniyle tazminat alabilir miyim?',
-        'Hangi davranışlar mobbing sayılır?',
-        'İşvereni şikayet etmek için nereye başvururum?',
-      ]
+    'Fesih & İspat': {
+      icon: '🔍',
+      sub: 'Fesih türleri, geçerli neden, ispat yükü ve işe iade davaları',
     },
     'SGK & Sigorta': {
-      icon: '🏥',
-      sub: 'Sigorta primleri, emeklilik ve SGK hakları hakkında sorularınızı sorun',
-      chips: [
-        'Sigortam eksik yatırılıyor ne yapabilirim?',
-        'Emeklilik için kaç prim günüm olmalı?',
-        'SGK\'ya nasıl şikayet yapabilirim?',
-        'Kısmi süreli çalışmada SGK nasıl işler?',
-        'İşten çıkınca sağlık sigortam devam eder mi?',
-      ]
+      icon: '🏛️',
+      sub: 'Prim, sigortalılık, emeklilik ve SGK mevzuatı araştırması',
     },
-    'İş Kazası': {
-      icon: '⚠️',
-      sub: 'İş kazası bildirimi, tazminat ve haklarınız hakkında sorularınızı sorun',
-      chips: [
-        'İş kazası nasıl bildirilir?',
-        'İş kazasında tazminat hakkım var mı?',
-        'İş kazasından sonra ne yapmalıyım?',
-        'İşverenin iş kazasındaki sorumluluğu nedir?',
-        'Meslek hastalığı iş kazası sayılır mı?',
-      ]
+    'Emsal Kararlar': {
+      icon: '📚',
+      sub: 'Yargıtay ve BAM içtihatları, emsal karar araştırması',
+    },
+    'Hesaplamalar': {
+      icon: '🧮',
+      sub: 'Kıdem, ihbar, fazla mesai ve izin ücreti hesaplamaları',
     },
   };
 
