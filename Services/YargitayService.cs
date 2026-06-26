@@ -25,42 +25,39 @@ public class YargitayService
         _httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml");
     }
 
+    private static readonly HashSet<string> CaseLawTerms = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "kıdem tazminatı", "ihbar tazminatı", "haksız fesih", "kötü niyet tazminatı",
+        "iş kazası", "mobbing", "sendikal", "ayrımcılık", "işe iade", "fesih"
+    };
+
     public async Task<List<SourceItem>> SearchAsync(string userMessage)
     {
+        if (!CaseLawTerms.Any(t => userMessage.Contains(t, StringComparison.OrdinalIgnoreCase)))
+            return new();
+
         var keywords = ExtractKeywords(userMessage);
         if (!keywords.Any()) return new();
 
         var query = string.Join(" ", keywords.Take(3));
         var encodedQuery = Uri.EscapeDataString(query);
-
         var searchUrl = $"https://karararama.yargitay.gov.tr/YargitayBilgiBankasiIstemciWeb/faces/jsp/ozet_liste.jsp?aranan={encodedQuery}&detay=false";
-        var fallback = new List<SourceItem>
-        {
-            new SourceItem
-            {
-                Title   = $"Yargıtay Kararları: {query}",
-                Summary = $"Yargıtay'ın \"{query}\" konusundaki kararlarını görüntülemek için tıklayın.",
-                Url     = searchUrl
-            }
-        };
 
         try
         {
             var html = await _httpClient.GetStringAsync(searchUrl);
-            var scraped = ParseResults(html);
-            return scraped.Count > 0 ? scraped : fallback;
+            return ParseResults(html, searchUrl);
         }
         catch
         {
-            return fallback;
+            return new();
         }
     }
 
-    private static List<SourceItem> ParseResults(string html)
+    private static List<SourceItem> ParseResults(string html, string searchUrl)
     {
         var results = new List<SourceItem>();
 
-        // Karar satırlarını bul: "9. HD, 2023/1234 E., 2023/5678 K." gibi
         var kararlar = Regex.Matches(html,
             @"(?<hd>\d{1,2}\.\s*(?:H\.?D\.?|C\.?D\.?|HGK|CGK|HD|CD))[^\d<]*(?<esas>\d{4}/\d+)\s*E[^\d<]*(?<karar>\d{4}/\d+)\s*K",
             RegexOptions.IgnoreCase);
@@ -72,7 +69,6 @@ public class YargitayService
             var karar = m.Groups["karar"].Value.Trim();
             var title = $"Yargıtay {hd}, {esas} E. {karar} K.";
 
-            // Özet: karar etiketinden sonraki metin
             var afterMatch = html[(m.Index + m.Length)..];
             var summary = Regex.Replace(afterMatch[..Math.Min(300, afterMatch.Length)], "<[^>]+>", "").Trim();
             summary = Regex.Replace(summary, @"\s+", " ");
@@ -82,7 +78,7 @@ public class YargitayService
             {
                 Title   = title,
                 Summary = string.IsNullOrWhiteSpace(summary) ? "Yargıtay kararı" : summary,
-                Url     = $"https://karararama.yargitay.gov.tr"
+                Url     = searchUrl
             });
         }
 
